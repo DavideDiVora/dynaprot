@@ -1,0 +1,11 @@
+# atlas dataset config.yaml
+
+# Data Paths
+data_dir: "${DYNAPROT_DATA_DIR}/atlas_dynamics_labels"   # location of dynamics labels
+protein_chains_path: "dynaprot/data/preprocessing/protein_lists/atlas_chains.npy"   # location of full protein chain list
+
+# Data Preprocessing Config:
+max_num_residues: 512
+random_cropping: True
+augmented: True
+

@@ -1,0 +1,71 @@
+[project]
+name = "dynaprot"
+version = "0.1.0"
+description = "Learning residue-level protein dynamics with multiscale Gaussians"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Mihir Bafna" },
+    { name = "Bowen Jing" },
+    { name = "Bonnie Berger" },
+]
+keywords = [
+    "protein dynamics",
+    "molecular dynamics",
+    "structural biology",
+    "conformational ensembles",
+    "deep learning",
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+# Core runtime: enough to load a checkpoint and run inference on a PDB.
+dependencies = [
+    "biopython>=1.85",
+    "dm-tree>=0.1.8",
+    "einops>=0.8.1",
+    "huggingface-hub>=0.24",
+    "mdtraj>=1.11.0",
+    "modelcif>=1.4",
+    "numpy==1.26.4",
+    "pandas>=2.0",
+    "pytorch-lightning==2.4.0",
+    "pyyaml>=6.0.2",
+    "scikit-learn>=1.7.1",
+    "scipy==1.14.1",
+    "torch>=2.7.1",
+]
+
+[project.optional-dependencies]
+# Rebuilding the ATLAS training labels from raw MD trajectories.
+preprocess = ["rich>=13.0", "tqdm>=4.66"]
+# The ProDy anisotropic network model (NMA) baseline.
+nma = ["prody>=2.4"]
+# Figures and notebooks.
+viz = ["matplotlib>=3.10.3", "plotly>=5.0", "seaborn>=0.13.2", "ipykernel>=6.30.0"]
+# Experiment tracking during training (training also runs with --logger none).
+train = ["neptune>=1.14.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+dynaprot = "dynaprot.cli:main"
+dynaprot-train = "dynaprot.train:main"
+
+[project.urls]
+Repository = "https://github.com/MihirBafna/dynaprot"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["dynaprot"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"dynaprot/data/preprocessing/protein_lists" = "dynaprot/data/preprocessing/protein_lists"

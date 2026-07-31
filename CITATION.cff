@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use DynaProt, please cite the paper below."
+title: "DynaProt: Learning residue level protein dynamics with multiscale Gaussians"
+authors:
+  - family-names: Bafna
+    given-names: Mihir
+    affiliation: "CSAIL, Massachusetts Institute of Technology"
+  - family-names: Jing
+    given-names: Bowen
+    affiliation: "CSAIL, Massachusetts Institute of Technology"
+  - family-names: Berger
+    given-names: Bonnie
+    affiliation: "CSAIL and Department of Mathematics, Massachusetts Institute of Technology"
+license: MIT
+repository-code: "https://github.com/MihirBafna/dynaprot"
+preferred-citation:
+  type: conference-paper
+  title: "Learning residue level protein dynamics with multiscale Gaussians"
+  authors:
+    - family-names: Bafna
+      given-names: Mihir
+    - family-names: Jing
+      given-names: Bowen
+    - family-names: Berger
+      given-names: Bonnie
+  collection-title: "International Conference on Learning Representations (ICLR)"
+  year: 2026
