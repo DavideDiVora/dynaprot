@@ -1,20 +1,9 @@
 """Render predicted marginal Gaussians as PyMOL ellipsoids.
 
-Kept separate from :mod:`dynaprot.inference` on purpose: prediction writes plain arrays, and
-visualization is something you *call on* those arrays afterwards.
-
 Each per-residue 3x3 covariance is an ellipsoid centred on that residue's Calpha, with axes
 along the eigenvectors and semi-axis lengths ``sqrt(eigenvalue)`` -- i.e. a one-sigma surface
 of the predicted positional distribution. This is the rendering used for Figure 4 of the paper.
 
-Two entry points, because PyMOL is awkward to depend on:
-
-* :func:`write_pymol_script` needs nothing installed. It writes a small script that PyMOL runs
-  (``pymol structure.pdb ellipsoids.py``), reading the arrays at view time.
-* :func:`render_ellipsoids` drives PyMOL directly when ``pymol`` is importable, and can save a
-  ``.pse`` session or a ray-traced image.
-
-The CGO mesh construction follows https://github.com/vlasenkov/pymol-iellipsoid.
 """
 from __future__ import annotations
 
@@ -26,7 +15,6 @@ import numpy as np
 
 __all__ = ["ellipsoid_mesh", "render_ellipsoids", "write_pymol_script"]
 
-#: Default colours: predicted (pink, matching the paper's figures) and reference (teal).
 PREDICTED_COLOR = (1.0, 20 / 255, 147 / 255)
 REFERENCE_COLOR = (0.0, 0.545, 0.545)
 

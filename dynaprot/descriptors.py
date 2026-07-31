@@ -1,14 +1,4 @@
-"""Dynamics descriptors: deriving, projecting and composing them.
-
-Shared by preprocessing (building training labels), inference (model outputs) and evaluation.
-These operations implement the four levels of the paper's Gaussian view of dynamics:
-
-* level 1 -- per-residue scalar RMSF_i = sqrt(Tr(Sigma_i))          :func:`rmsf_from_covariances`
-* level 2 -- per-residue 3x3 marginals (the diagonal blocks)        :func:`extract_3x3_block_diagonal`
-* level 3 -- N x N scalar coupling from the full joint              :func:`downsample_covariance_to_nxn`
-* level 4 -- the full 3N x 3N joint, composed from levels 2 and 3   :func:`compose_joint_covariance`
-
-"""
+"""gaussian dynamics descriptors/utilities for their algebraic operations."""
 from __future__ import annotations
 
 import torch

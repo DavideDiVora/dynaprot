@@ -419,8 +419,7 @@ class DynaProtPredictor:
 # --------------------------------------------------------------------------------------
 # writers
 # --------------------------------------------------------------------------------------
-#: Shape/unit of every array `prediction.npz` can hold, mirrored into metadata.json so the
-#: file is self-documenting (an .npz carries no units of its own).
+
 ARRAY_SPEC = {
     "marginal_covariances": ("(N, 3, 3) per-residue marginal covariance, global frame", "A^2"),
     "rmsf": ("(N,) per-residue RMSF, sqrt(Tr(Sigma_i))", "A"),
