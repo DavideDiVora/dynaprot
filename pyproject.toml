@@ -48,7 +48,15 @@ preprocess = ["rich>=13.0", "tqdm>=4.66"]
 # The ProDy anisotropic network model (NMA) baseline.
 nma = ["prody>=2.4"]
 # Figures and notebooks.
-viz = ["matplotlib>=3.10.3", "plotly>=5.0", "seaborn>=0.13.2", "ipykernel>=6.30.0"]
+viz = [
+    "matplotlib>=3.10.3",
+    "plotly>=5.0",
+    "seaborn>=0.13.2",
+    "ipykernel>=6.30.0",
+    "ipywidgets>=8.0",
+    "jupyterlab>=4.0",
+    "tqdm>=4.66",
+]
 # Experiment tracking during training (training also runs with --logger none).
 train = ["neptune>=1.14.0"]
 dev = ["pytest>=8.0"]

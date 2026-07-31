@@ -1,6 +1,6 @@
 <div align="center">
 
-# dynaprot
+# DynaProt
 
 Implementation of [**Learning residue-level protein dynamics with multiscale Gaussians**](https://arxiv.org/pdf/2509.01038).
 
@@ -19,7 +19,7 @@ ensemble as a multivariate Gaussian over Cα coordinates:
   flexibility and its direction. RMSF is `sqrt(Tr(Σᵢ))`.
 - **an N×N coupling matrix** — how residue *i*'s motion relates to residue *j*'s.
 
-Together these give an approximate **3N×3N** joint covariance, from which ensembles are sampled
+Together these can be composed into an approximate **3N×3N** joint covariance, from which ensemble sketches are sampled
 in a fraction of a second — ~70,000× faster than generative ensemble predictors, at 2.86M
 parameters.
 
@@ -28,15 +28,14 @@ parameters.
 ```bash
 git clone https://github.com/MihirBafna/dynaprot.git
 cd dynaprot
-uv sync
+uv sync --all-extras
 ```
 
-Then `uv run dynaprot ...`, or activate with `source .venv/bin/activate`. `pip install -e .`
-also works. Extras: `nma` (ProDy baseline), `preprocess`, `viz`, `train`, `dev`.
+Then `uv run dynaprot ...`, or activate with `source .venv/bin/activate`.
 
-```bash
-uv sync --extra nma --extra dev      # pip: pip install -e ".[nma,dev]"
-```
+That single environment covers everything: inference, the ProDy NMA baseline, ATLAS
+preprocessing, plotting and Jupyter, Neptune logging, and the tests. For inference alone, plain
+`uv sync` is enough. Without uv: `pip install -e ".[nma,preprocess,viz,train,dev]"`.
 
 The OpenFold code DynaProt needs is vendored in `dynaprot/utils/openfold/` (Apache 2.0).
 
