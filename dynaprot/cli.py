@@ -175,6 +175,27 @@ def cmd_visualize(args: argparse.Namespace) -> int:
     return 0
 
 
+def _add_train_parser(subparsers) -> None:
+    from dynaprot.train import add_arguments
+
+    p = subparsers.add_parser(
+        "train",
+        help="train DynaProt on preprocessed ATLAS labels",
+        description=(
+            "Train a model from a data config and a model config. Requires the preprocessed "
+            "dynamics labels; see `python -m dynaprot.data.preprocessing.preprocess_atlas`."
+        ),
+    )
+    add_arguments(p)
+
+
+def cmd_train(args: argparse.Namespace) -> int:
+    from dynaprot.train import main as train_main
+
+    train_main(args)
+    return 0
+
+
 def cmd_predict(args: argparse.Namespace) -> int:
     if not args.input.is_file():
         print(f"error: no such file: {args.input}", file=sys.stderr)
@@ -278,12 +299,15 @@ def main(argv=None) -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     _add_predict_parser(subparsers)
     _add_visualize_parser(subparsers)
+    _add_train_parser(subparsers)
 
     args = parser.parse_args(argv)
     if args.command == "predict":
         return cmd_predict(args)
     if args.command == "visualize":
         return cmd_visualize(args)
+    if args.command == "train":
+        return cmd_train(args)
     parser.error(f"unknown command: {args.command}")
     return 2
 

@@ -1,19 +1,19 @@
 # dynaprot
 
-**Learning residue-level protein dynamics with multiscale Gaussians**
+Implementation of [**Learning residue-level protein dynamics with multiscale Gaussians**](https://arxiv.org/pdf/2509.01038).
 
 Mihir Bafna, Bowen Jing, Bonnie Berger — CSAIL, MIT
 
 DynaProt predicts descriptors of protein dynamics from a single static structure, treating an
 ensemble as a multivariate Gaussian over Cα coordinates:
 
-- **DynaProt-M** — per-residue **3×3 marginal covariances**: anisotropic "Gaussian blobs"
-  capturing local flexibility and its direction. RMSF is `sqrt(Tr(Σᵢ))`. **955K params.**
-- **DynaProt-J** — an **N×N coupling matrix**: how residue *i*'s motion relates to residue *j*'s.
+- **per-residue 3×3 marginal covariances** — anisotropic "Gaussian blobs" capturing local
+  flexibility and its direction. RMSF is `sqrt(Tr(Σᵢ))`.
+- **an N×N coupling matrix** — how residue *i*'s motion relates to residue *j*'s.
 
-Composing the two gives an approximate **3N×3N** joint covariance, from which ensembles are
-sampled in a fraction of a second — ~70,000× faster than generative ensemble predictors, at
-2.86M total parameters.
+Together these give an approximate **3N×3N** joint covariance, from which ensembles are sampled
+in a fraction of a second — ~70,000× faster than generative ensemble predictors, at 2.86M
+parameters.
 
 ## Install
 
@@ -67,22 +67,19 @@ pred["rmsf"].shape               # (431,)
 
 ### Choosing outputs
 
-`--outputs` selects descriptors; only the models needed are loaded and run.
+`--outputs` selects which descriptors to compute (default: all).
 
 ```bash
-dynaprot predict p.pdb -o out/ --outputs rmsf              # DynaProt-M only
+dynaprot predict p.pdb -o out/ --outputs rmsf
 dynaprot predict p.pdb -o out/ --outputs marginals coupling
 ```
 
-| `--outputs` | Needs | Writes |
-|---|---|---|
-| `rmsf` | M | `rmsf` in the npz, `rmsf.csv`, `rmsf_bfactor.pdb` |
-| `marginals` | M | `marginal_covariances` in the npz |
-| `coupling` | J | `coupling` + `correlation` in the npz |
-| `ensemble` | M + J | `ensemble.pdb` / `.xtc` |
-
-RMSF derives from the marginals, so requesting it still computes them and the prediction object
-keeps them.
+| `--outputs` | Writes |
+|---|---|
+| `rmsf` | `rmsf` in the npz, `rmsf.csv`, `rmsf_bfactor.pdb` |
+| `marginals` | `marginal_covariances` in the npz |
+| `coupling` | `coupling` + `correlation` in the npz |
+| `ensemble` | `ensemble.pdb` / `.xtc` |
 
 Other flags: `--chain A` (required for multi-chain PDBs), `--num-samples`, `--format both`,
 `--all-atom` (PULCHRA must be on `PATH`), `--device`, `--seed`.
@@ -118,17 +115,11 @@ The generated script needs nothing installed here. With `pymol` importable, `--s
 ## Checkpoints
 
 Hosted at [`mihirbafna/dynaprot`](https://huggingface.co/mihirbafna/dynaprot); they download on
-first use. For local copies, set `DYNAPROT_CKPT_DIR` to a directory of checkpoint folders or
-pass `--marginal-ckpt` / `--joint-ckpt`.
-
-| Name | Model |
-|---|---|
-| `dynaprot-M` | DynaProt-M, ATLAS/AlphaFlow split, 955K params |
-| `dynaprot-J` | DynaProt-J, same split, 1.9M params |
+first use. For local copies, set `DYNAPROT_CKPT_DIR` to a directory of checkpoint folders, or
+pass an explicit path with `--marginal-ckpt` / `--joint-ckpt`.
 
 Each folder holds `model.ckpt` plus the exact `model_config.yaml` and `data_config.yaml` it must
-be loaded with — these checkpoints do not carry their hyperparameters internally. Split-specific
-and ablation checkpoints are retained by the authors but not published.
+be loaded with — these checkpoints do not carry their hyperparameters internally.
 
 ## Training
 
@@ -142,16 +133,13 @@ python -m dynaprot.data.preprocessing.preprocess_atlas \
     --inpath  $DYNAPROT_DATA_DIR/atlas \
     --outpath $DYNAPROT_DATA_DIR/atlas_dynamics_labels
 
-dynaprot-train \
+dynaprot train \
     --data_config  configs/data/atlas_config_randomcropping.yaml \
     --model_config configs/model/dynaprot_marginal_nosinusoidal_1layer.yaml \
     --name my-run --logger none
 ```
 
 See `configs/README.md` for which config goes with which checkpoint.
-
-> The released checkpoints were trained at a constant learning rate; the warmup+cosine schedule
-> in the configs is opt-in via `train_params.use_lr_schedule: true`.
 
 ## Citation
 

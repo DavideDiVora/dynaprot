@@ -55,7 +55,6 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 dynaprot = "dynaprot.cli:main"
-dynaprot-train = "dynaprot.train:main"
 
 [project.urls]
 Repository = "https://github.com/MihirBafna/dynaprot"

@@ -1,8 +1,8 @@
 """Train DynaProt.
 
-    python -m dynaprot.train --data_config configs/data/atlas_config_randomcropping.yaml \
-                             --model_config configs/model/dynaprot_marginal_nosinusoidal_1layer.yaml \
-                             --name my-run
+    dynaprot train --data_config configs/data/atlas_config_randomcropping.yaml \
+                   --model_config configs/model/dynaprot_marginal_nosinusoidal_1layer.yaml \
+                   --name my-run
 
 ``--logger neptune`` needs NEPTUNE_API_TOKEN; ``--logger csv`` and ``--logger none`` do not.
 """
@@ -22,8 +22,8 @@ from dynaprot.data.datasets import DynaProtDataset, OpenFoldBatchCollator
 from dynaprot.model.architecture import DynaProt
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Training dynaprot")
+def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+    """Attach the training arguments, so `dynaprot train` and `-m dynaprot.train` agree."""
     parser.add_argument(
         "--data_config",
         default="configs/data/atlas_config_randomcropping.yaml",
@@ -51,7 +51,7 @@ def parse_args():
         action="store_true",
         help="Enable autograd anomaly detection (slow)",
     )
-    return parser.parse_args()
+    return parser
 
 
 def build_logger(kind, args, model_config, ckpt_path):
@@ -94,8 +94,9 @@ def build_logger(kind, args, model_config, ckpt_path):
     )
 
 
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = add_arguments(argparse.ArgumentParser(description="Train DynaProt")).parse_args()
 
     data_config = load_config(args.data_config)
     model_config = load_config(args.model_config)
