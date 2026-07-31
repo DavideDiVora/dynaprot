@@ -1,8 +1,16 @@
+<div align="center">
+
 # dynaprot
 
 Implementation of [**Learning residue-level protein dynamics with multiscale Gaussians**](https://arxiv.org/pdf/2509.01038).
 
 Mihir Bafna, Bowen Jing, Bonnie Berger — CSAIL, MIT
+
+[![ICLR 2026](https://img.shields.io/badge/ICLR-2026-8A2BE2.svg)](https://arxiv.org/pdf/2509.01038)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoints-FFD21E.svg)](https://huggingface.co/mihirbafna/dynaprot)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+</div>
 
 DynaProt predicts descriptors of protein dynamics from a single static structure, treating an
 ensemble as a multivariate Gaussian over Cα coordinates:
