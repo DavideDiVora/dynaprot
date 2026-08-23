@@ -10,6 +10,8 @@ Mihir Bafna, Bowen Jing, Bonnie Berger — CSAIL, MIT
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Checkpoints-FFD21E.svg)](https://huggingface.co/mihirbafna/dynaprot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+<img src="overview.png" alt="drawing" width="10000"/>
+
 </div>
 
 DynaProt predicts descriptors of protein dynamics from a single static structure, treating an
