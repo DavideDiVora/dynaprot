@@ -5,6 +5,13 @@
                    --name my-run
 
 ``--logger neptune`` needs NEPTUNE_API_TOKEN; ``--logger csv`` and ``--logger none`` do not.
+
+Training stops after ``train_params.max_steps`` optimiser steps when the model config sets it (``global_step``
+counts calls of ``optimizer.step()``, i.e. one per ``accumulate_grad_batches`` batches), otherwise after
+``train_params.epochs`` epochs. Validation runs once per epoch. Besides the checkpoints every 500 optimiser
+steps, ``<name>-best-step=<step>.ckpt`` keeps the checkpoint with the lowest ``val/total_loss`` (epoch mean
+over the validation batches) and ``<name>-last.ckpt`` the latest one. With ``--logger neptune`` the
+validation loss goes to Neptune only, so these two are written only with ``--logger csv`` or ``--logger none``.
 """
 import argparse
 import os
@@ -44,8 +51,27 @@ def add_arguments(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Experiment logger. neptune needs NEPTUNE_API_TOKEN in the environment.",
     )
     parser.add_argument("--ckpt_dir", default="ckpt/", help="Where to write checkpoints")
+    parser.add_argument(
+        "--log_dir",
+        default="logs",
+        help="CSV logger root: metrics in <log_dir>/<name>/version_<n>/metrics.csv",
+    )
     parser.add_argument("--num_workers", type=int, default=12, help="Dataloader workers")
+    parser.add_argument(
+        "--val_batch_size",
+        type=int,
+        default=None,
+        help="Validation batch size (default: train_params.batch_size). With 1, val/total_loss is the mean "
+        "over the validation proteins; with B > 1 it is the mean of the per-batch losses (each a mean over "
+        "the residues of its batch) weighted by the proteins per batch.",
+    )
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--max_steps",
+        type=int,
+        default=None,
+        help="Optimiser steps after which training stops (default: train_params.max_steps, or no limit)",
+    )
     parser.add_argument(
         "--detect_anomaly",
         action="store_true",
@@ -59,7 +85,7 @@ def build_logger(kind, args, model_config, ckpt_path):
     if kind == "none":
         return None
     if kind == "csv":
-        return CSVLogger(save_dir="logs", name=args.name)
+        return CSVLogger(save_dir=args.log_dir, name=args.name)
 
     import neptune
     from pytorch_lightning.loggers import NeptuneLogger
@@ -120,7 +146,7 @@ def main(args=None):
     )
     val_dataloader = torch.utils.data.DataLoader(
         val_dataset,
-        batch_size=batch_size,
+        batch_size=args.val_batch_size or batch_size,
         collate_fn=OpenFoldBatchCollator(),
         num_workers=args.num_workers,
         shuffle=False,
@@ -137,22 +163,36 @@ def main(args=None):
     logger = build_logger(args.logger, args, model_config, ckpt_path)
     print(model)
 
+    callbacks = [
+        ModelCheckpoint(
+            dirpath=args.ckpt_dir,
+            filename=args.name + "-{step:06d}",
+            save_top_k=-1,
+            every_n_train_steps=500,
+        )
+    ]
+    if args.logger != "neptune":  # val/total_loss reaches trainer.callback_metrics (DynaProt.validation_step)
+        best_checkpoint = ModelCheckpoint(
+            dirpath=args.ckpt_dir,
+            filename=args.name + "-best-{step:06d}",
+            monitor="val/total_loss",
+            mode="min",
+            save_top_k=1,
+            save_last=True,
+        )
+        best_checkpoint.CHECKPOINT_NAME_LAST = args.name + "-last"
+        callbacks.append(best_checkpoint)
+
     trainer = pl.Trainer(
         max_epochs=model_config["train_params"]["epochs"],
+        max_steps=args.max_steps if args.max_steps is not None else model_config["train_params"].get("max_steps", -1),
         logger=logger if logger is not None else False,
         accelerator=model_config["train_params"]["accelerator"],
         strategy=model_config["train_params"]["strategy"],
         devices=model_config["train_params"]["num_devices"],
         num_nodes=model_config["train_params"].get("num_nodes", 1),
         precision=model_config["train_params"].get("precision", 32),
-        callbacks=[
-            ModelCheckpoint(
-                dirpath=args.ckpt_dir,
-                filename=args.name + "-{step:06d}",
-                save_top_k=-1,
-                every_n_train_steps=500,
-            )
-        ],
+        callbacks=callbacks,
     )
 
     torch.autograd.set_detect_anomaly(args.detect_anomaly)

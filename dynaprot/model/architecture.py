@@ -446,7 +446,8 @@ class DynaProt(LightningModule):
         optimizer = self.optimizers()
         preds = self(batch["aatype"].argmax(dim=-1), batch["frames"], batch["resi_pad_mask"])
         total_loss, loss_dict = self.loss(preds, batch)
-        self.manual_backward(total_loss)
+        # mean over the accumulated micro-batches, as the average over devices of DDP (the clipping acts on it)
+        self.manual_backward(total_loss / self.grad_accum_batches)
         
         self._grad_accum_counter += 1
         self._loss_steps += 1
@@ -499,8 +500,15 @@ class DynaProt(LightningModule):
                     self._log_metric(log_key, loss_all_ranks, self.global_step * self.grad_accum_batches) 
                         
         total_loss_all_ranks = self.all_gather(total_loss.detach()).mean()
-        if self.trainer.is_global_zero:                   
-            self._log_metric("val/total_loss", total_loss_all_ranks, self.global_step * self.grad_accum_batches)
+        if type(self.logger).__name__ == "NeptuneLogger":
+            if self.trainer.is_global_zero:
+                self._log_metric("val/total_loss", total_loss_all_ranks, self.global_step * self.grad_accum_batches)
+        else:
+            # Monitored by ModelCheckpoint, which reads trainer.callback_metrics on every rank: logged with
+            # self.log from every rank (the value is already gathered over the ranks). Lightning reduces it to
+            # the mean over the validation batches of the epoch, weighted by the number of proteins per batch.
+            self.log("val/total_loss", total_loss_all_ranks, on_step=False, on_epoch=True,
+                     batch_size=batch["resi_pad_mask"].shape[0])
         return total_loss
     
 

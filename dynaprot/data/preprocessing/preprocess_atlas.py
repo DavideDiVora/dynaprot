@@ -80,46 +80,66 @@ def preprocess_atlas():
         progress.update(task, advance=1,description=f"[cyan]completed dynaprot preprocessing of ATLAS chains ({total_chains}/{total_chains}) in {tim} min")
 
 
-def save_separate_frames(prot, superposed_traj, frame_stride=20):
-    frame_dir_path = outpath+f"/{prot}/"+"frames/"
+def frame_file_name(i):
+    """File name of frame i of the joined trajectory: frame_00000.pt, frame_00005.pt, etc."""
+    return f"frame_{i:05d}.pt"
+
+
+def save_frame(frame, frame_path):
+    """Backbone frames of one MD frame (an mdtraj Trajectory of length 1), saved as {"frames": (N, 4, 4)}."""
+    with tempfile.NamedTemporaryFile(suffix=".pdb", delete=True) as tmp_pdb:
+        frame.save_pdb(tmp_pdb.name)  # Save PDB to temp file
+        pdb_string = tmp_pdb.read().decode()
+        # print(pdb_string)
+    feats = from_pdb_string(pdb_string)
+    feats = np_to_tensor_dict(feats, feats.keys())
+    feats = data_transforms.atom37_to_frames(feats)
+    feats = data_transforms.get_backbone_frames(feats)
+    torch.save({"frames":feats["backbone_rigid_tensor"]}, frame_path)
+
+
+def save_separate_frames(prot, superposed_traj, frame_stride=20, frame_dir_path=None):
+    """Every frame_stride-th frame of superposed_traj, written by save_frame to frame_dir_path under
+    frame_file_name(i); by default frame_dir_path is <outpath>/<prot>/frames/, as in the original pipeline."""
+    if frame_dir_path is None:
+        frame_dir_path = outpath+f"/{prot}/"+"frames/"
     if not os.path.exists(frame_dir_path):
         os.mkdir(frame_dir_path)
-        
+
     traj = superposed_traj
     for i in range(0, len(traj), frame_stride):
-        frame_path = os.path.join(frame_dir_path, f"frame_{i:05d}.pt")  # Save as frame_00000.pt, frame_00005.pt, etc.
-        with tempfile.NamedTemporaryFile(suffix=".pdb", delete=True) as tmp_pdb:
-            traj[i].save_pdb(tmp_pdb.name)  # Save PDB to temp file
-            pdb_string = tmp_pdb.read().decode()
-            # print(pdb_string)
-        feats = from_pdb_string(pdb_string)
-        feats = np_to_tensor_dict(feats, feats.keys())
-        feats = data_transforms.atom37_to_frames(feats)
-        feats = data_transforms.get_backbone_frames(feats)
-        torch.save({"frames":feats["backbone_rigid_tensor"]}, frame_path)
-        
+        save_frame(traj[i], os.path.join(frame_dir_path, frame_file_name(i)))
+
     return prot
         
 
-def process_one_trajectory_atlas(prot):  
-    name,chain = prot.split("_")
-    if not os.path.exists(outpath+f"/{prot}/"):
-        os.mkdir(outpath+f"/{prot}/")
-
-    pt_path = os.path.join(outpath,prot,f"{prot}.pt")
-    
+def load_superposed_trajectory(inpath, prot):
+    """(traj, ref): the three replicas <inpath>/<prot>/<prot>_prod_R{1,2,3}_fit.xtc joined, every frame
+    superposed (all atoms) on the PDB <inpath>/<prot>/<prot>.pdb, and the PDB itself."""
     pdb_path = os.path.join(inpath,prot, prot+".pdb")
-    ref = md.load(pdb_path)     
+    ref = md.load(pdb_path)
 
     replicates = []
     for i in range(3):  # assuming 3 replicates
         traj_path = os.path.join(inpath, prot, f"{prot}_prod_R{i+1}_fit.xtc")
         traj = md.load(traj_path, top=pdb_path)
         replicates.append(traj)
-    
+
     traj = md.join(replicates)
     traj.superpose(ref)         # superpose to our reference
-    
+    return traj, ref
+
+
+def process_one_trajectory_atlas(prot):
+    name,chain = prot.split("_")
+    if not os.path.exists(outpath+f"/{prot}/"):
+        os.mkdir(outpath+f"/{prot}/")
+
+    pt_path = os.path.join(outpath,prot,f"{prot}.pt")
+
+    pdb_path = os.path.join(inpath,prot, prot+".pdb")
+    traj, ref = load_superposed_trajectory(inpath, prot)
+
     # if os.path.exists(pt_path):
     #     selected_feats = torch.load(pt_path)
     #     selected_feats["dynamics_rmsf"] = compute_rmsf_from_covariances(selected_feats["dynamics_covars_local"])
