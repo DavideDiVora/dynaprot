@@ -1,6 +1,7 @@
 # dynaprot_marginal_flexpert.yaml: DynaProt-M (dynaprot_marginal.yaml) retrained on the Flexpert-3D split
-# (configs/data/atlas_config_flexpertsplits.yaml) on one GPU: batch 16 x accumulate_grad_batches 4 = 64 proteins
-# per optimiser step; training stops at max_steps optimiser steps (= total_steps); constant learning rate as
+# (configs/data/atlas_config_flexpertsplits.yaml) on one GPU: batch 20 x accumulate_grad_batches 4 = 80 proteins
+# per optimiser step, the effective batch of the released DynaProt-M (dynaprot_marginal.yaml of upstream e1bc8e9: batch 20
+# on 4 GPUs with DDP), with the gradient averaged over the micro-batches as DDP averages over the devices; training stops at max_steps optimiser steps (= total_steps); constant learning rate as
 # in the released models (use_lr_schedule unset).
 
 # Model training and testing settings
@@ -12,7 +13,7 @@ model_params:
 
 train_params:
   precision: 32
-  batch_size: 16
+  batch_size: 20
   accumulate_grad_batches: 4
   epochs: 10000
   learning_rate: 0.0001
